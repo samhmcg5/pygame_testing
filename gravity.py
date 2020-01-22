@@ -21,6 +21,7 @@ gravity = 200
 gameDisplay = pygame.display.set_mode((width, height))
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
+font = pygame.font.Font('freesansbold.ttf', 12)
 
 
 def kinematic(vel, acc):
@@ -28,17 +29,28 @@ def kinematic(vel, acc):
     vel += acc*delta_t
     return change, vel
 
+def showText(x, y, text):
+    text = font.render(text, True, white)
+    text_rect = text.get_rect()
+    text_rect.center = (x, y)
+    gameDisplay.blit(text, text_rect)
+
 class Goal():
     def __init__(self, x, y, rad, color):
         self.x = int(x)
         self.y = int(y)
         self.rad = rad
         self.color = color
+        self.rect = pygame.Rect(self.x, self.y, self.rad, self.rad)
 
     def draw(self):
-        x = int(self.x)
-        y = int(self.y)
-        pygame.draw.rect(gameDisplay, self.color, (x, y, self.rad, self.rad))
+        pygame.draw.rect(gameDisplay, self.color, self.rect)
+
+    def collides(self, shape):
+        if self.rect.colliderect(shape):
+            return True
+        else:
+            return False
 
 class Ball():
     def __init__(self, x, y, rad, color):
@@ -53,11 +65,17 @@ class Ball():
         self.x_acc = 0
         self.y_acc = 200
         self.x_dir = 0
+        self.rect = pygame.Rect(self.x, self.y, 2*self.rad, 2*self.rad)
 
     def draw(self):
         x = int(self.x)
         y = int(self.y)
-        pygame.draw.circle(gameDisplay, self.color, (x, y), self.rad)
+        self.rect = pygame.draw.circle(gameDisplay, self.color, (x, y), self.rad)
+        # self.rect.move_ip(x,y)
+        # pygame.draw.ellipse(gameDisplay, self.color, self.rect)
+
+    def get_rect(self):
+        return self.rect
 
     def size(self):
         return self.rad
@@ -110,10 +128,10 @@ class Ball():
 ###     GAME LOOP   ###
 #######################
 def game_loop(agent=None):
-    x = int(width * 0.45)
+    x = int(width * 0.5)
     y = int(height * 0.8)
 
-    goal = Goal(0.9*x ,0.1*y, 100, red)
+    goal = Goal(0.5*width ,0.1*height, 100, red)
 
     ball = Ball(x, y, 20, white)
 
@@ -154,6 +172,9 @@ def game_loop(agent=None):
         gameDisplay.fill(black)
         goal.draw()
         ball.draw()
+
+        if goal.collides(ball.get_rect()):
+            showText(0.1*width, 0.1*height, "collision")
 
         pygame.display.update()
         clock.tick(60)
