@@ -1,6 +1,7 @@
 import sys
 import pygame
 import math
+from random import random
 
 from agent import AgentThread
 
@@ -37,20 +38,31 @@ def showText(x, y, text):
 
 class Goal():
     def __init__(self, x, y, rad, color):
-        self.x = int(x)
-        self.y = int(y)
         self.rad = rad
         self.color = color
+        self.x = int(x)
+        self.y = int(y)
         self.rect = pygame.Rect(self.x, self.y, self.rad, self.rad)
 
     def draw(self):
         pygame.draw.rect(gameDisplay, self.color, self.rect)
+
+    def reset(self):
+        self.x = int(random() * width)
+        self.y = int(random() * height)
+        self.rect.center = (self.x,self.y)
 
     def collides(self, shape):
         if self.rect.colliderect(shape):
             return True
         else:
             return False
+
+    def get_rect(self):
+        return self.rect
+
+    def get_pos(self):
+        return self.x, self.y
 
 class Ball():
     def __init__(self, x, y, rad, color):
@@ -71,14 +83,18 @@ class Ball():
         x = int(self.x)
         y = int(self.y)
         self.rect = pygame.draw.circle(gameDisplay, self.color, (x, y), self.rad)
-        # self.rect.move_ip(x,y)
-        # pygame.draw.ellipse(gameDisplay, self.color, self.rect)
 
     def get_rect(self):
         return self.rect
 
     def size(self):
         return self.rad
+
+    def get_pos(self):
+        return self.x, self.y
+
+    def get_vel(self):
+        return self.x_vel, self.y_vel
 
     def left(self):
         self.x_vel = -150
@@ -130,12 +146,15 @@ class Ball():
 def game_loop(agent=None):
     x = int(width * 0.5)
     y = int(height * 0.8)
+    running = True
+    # logic states
+    collisions = 0
+    current_collide = False
+    counter = 0
 
-    goal = Goal(0.5*width ,0.1*height, 100, red)
-
+    goal = Goal(0.5*width ,0.1*height, 50, red)
     ball = Ball(x, y, 20, white)
 
-    running = True
     while running:
         action = ""
         for event in pygame.event.get():
@@ -173,8 +192,28 @@ def game_loop(agent=None):
         goal.draw()
         ball.draw()
 
+        # Am i in the goal?
+        current_collide = False
         if goal.collides(ball.get_rect()):
+            current_collide = True
+            collisions += 1
             showText(0.1*width, 0.1*height, "collision")
+            if collisions >= 30:
+                collisions = 0
+                goal.reset()
+        if not current_collide:
+            collisions = 0
+
+        # Updates the agents information
+        counter += 1
+        if agent and counter >= 10:
+            ball_x, ball_y = ball.get_pos()
+            goal_x, goal_y = goal.get_pos()
+            vel_x, vel_y = ball.get_vel()
+            agent.tell({"key":"BALL", "x":ball_x, "y":ball_y})
+            agent.tell({"key":"GOAL", "x":goal_x, "y":goal_y})
+            agent.tell({"key":"VEL", "vel_x":vel_x, "vel_y":vel_y})
+            counter = 0
 
         pygame.display.update()
         clock.tick(60)
