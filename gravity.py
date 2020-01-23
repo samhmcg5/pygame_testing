@@ -4,6 +4,7 @@ import math
 from random import random
 
 from agent import AgentThread
+from defines import Action
 
 # Run with an agent?
 run_agent = False
@@ -23,7 +24,6 @@ gameDisplay = pygame.display.set_mode((width, height))
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 font = pygame.font.Font('freesansbold.ttf', 12)
-
 
 def kinematic(vel, acc):
     change = vel*delta_t + 0.5*acc*math.pow(delta_t, 2)
@@ -66,17 +66,17 @@ class Goal():
 
 class Ball():
     def __init__(self, x, y, rad, color):
-        self.x = int(x)
-        self.y = int(y)
-        self.rad = rad
-        self.color = color
+        self.x        = int(x)
+        self.y        = int(y)
+        self.rad      = rad
+        self.color    = color
         self.x_change = 0
         self.y_change = 0
-        self.x_vel = 0
-        self.y_vel = 0
-        self.x_acc = 0
-        self.y_acc = 200
-        self.x_dir = 0
+        self.x_vel    = 0
+        self.y_vel    = 0
+        self.x_acc    = 0
+        self.y_acc    = 200
+        self.x_dir    = 0
         self.rect = pygame.Rect(self.x, self.y, 2*self.rad, 2*self.rad)
 
     def draw(self):
@@ -156,7 +156,7 @@ def game_loop(agent=None):
     ball = Ball(x, y, 20, white)
 
     while running:
-        action = ""
+        action = 0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -164,27 +164,27 @@ def game_loop(agent=None):
                 if event.key == pygame.K_q:
                     running = False
                 elif event.key == pygame.K_LEFT:
-                    action = "LEFT"
+                    action = Action.LEFT
                 elif event.key == pygame.K_RIGHT:
-                    action = "RIGHT"
+                    action = Action.RIGHT
                 elif event.key == pygame.K_UP:
-                    action = "UP"
+                    action = Action.UP
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                    action = "RELEASE_R" if event.key == pygame.K_RIGHT else "RELEASE_L"
+                    action = Action.RELEASE_R if event.key == pygame.K_RIGHT else Action.RELEASE_L
             if event.type == pygame.USEREVENT and agent:
                 action = event.key
         
         # Convert key into action
-        if action == "UP":
+        if action == Action.UP:
             ball.up()
-        elif action == "LEFT":
+        elif action == Action.LEFT:
             ball.left()
-        elif action == "RIGHT":
+        elif action == Action.RIGHT:
             ball.right()
-        elif action == "RELEASE_R":
+        elif action == Action.RELEASE_R:
             ball.release_x("RIGHT")
-        elif action == "RELEASE_L":
+        elif action == Action.RELEASE_L:
             ball.release_x("LEFT")
 
         ball.update()
@@ -198,7 +198,7 @@ def game_loop(agent=None):
             current_collide = True
             collisions += 1
             showText(0.1*width, 0.1*height, "collision")
-            if collisions >= 30:
+            if collisions >= 40:
                 collisions = 0
                 goal.reset()
         if not current_collide:

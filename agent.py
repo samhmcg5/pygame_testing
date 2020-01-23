@@ -1,7 +1,8 @@
 from threading import Thread
 from queue import Queue
-
 import pygame
+
+from defines import Action
 
 clock = pygame.time.Clock()
 
@@ -64,28 +65,28 @@ class AgentThread(Thread):
 
         if delta_x < 0:
             if self.state.vel_x >= 0:
-                event = pygame.event.Event(pygame.USEREVENT, {"key": "RIGHT"})
+                event = pygame.event.Event(pygame.USEREVENT, {"key": Action.RIGHT})
                 pygame.event.post(event)
             else:
-                event = pygame.event.Event(pygame.USEREVENT, {"key": "RIGHT"})
+                event = pygame.event.Event(pygame.USEREVENT, {"key": Action.RIGHT})
                 # event = pygame.event.Event(pygame.USEREVENT, {"key": "RELEASE_L"})
                 pygame.event.post(event)
         if delta_x > 0:
             if self.state.vel_x <= 0:
-                event = pygame.event.Event(pygame.USEREVENT, {"key": "LEFT"})
+                event = pygame.event.Event(pygame.USEREVENT, {"key": Action.LEFT})
                 pygame.event.post(event)
             else:
-                event = pygame.event.Event(pygame.USEREVENT, {"key": "LEFT"})
+                event = pygame.event.Event(pygame.USEREVENT, {"key": Action.LEFT})
                 # event = pygame.event.Event(pygame.USEREVENT, {"key": "RELEASE_R"})
                 pygame.event.post(event)
         if delta_y > 0:
-            event = pygame.event.Event(pygame.USEREVENT, {"key":"UP"})
+            event = pygame.event.Event(pygame.USEREVENT, {"key": Action.UP})
             pygame.event.post(event)
         return event
 
 
     def run(self):
-        prev_event = pygame.event.Event(pygame.USEREVENT, {"key": "NONE"})
+        prev_event = pygame.event.Event(pygame.USEREVENT, {"key": Action.NONE})
         while self.running:
             msg = self.get_top()
             if msg:
@@ -93,21 +94,10 @@ class AgentThread(Thread):
 
             event = self.action()
 
-            if event.key is not prev_event.key and event.key is not "UP":
+            if event.key is not prev_event.key and event.key is not Action.UP:
                 print(event)
             prev_event = event
             
-            # if event is not None:
-            #     try:
-            #         pygame.event.post(event)
-            #     except pygame.error as e:
-            #         print("ERROR", event)
             clock.tick(60)
-
-            # event = pygame.event.Event(pygame.USEREVENT, {"key":"UP"})
-            # event = pygame.event.Event(pygame.USEREVENT, {"key": "LEFT"})
-            # event = pygame.event.Event(pygame.USEREVENT, {"key": "RELEASE_L"})
-            # event = pygame.event.Event(pygame.USEREVENT, {"key": "RIGHT"})
-            # event = pygame.event.Event(pygame.USEREVENT, {"key": "RELEASE_R"})
 
     
