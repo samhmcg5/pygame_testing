@@ -2,7 +2,7 @@ from threading import Thread
 from queue import Queue
 import pygame
 
-from defines import Action
+from defines import *
 
 clock = pygame.time.Clock()
 

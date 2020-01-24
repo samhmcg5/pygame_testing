@@ -3,7 +3,7 @@ import pygame
 import math
 from random import random
 
-from agent2 import AgentThread
+from agent import AgentThread
 from defines import *
 
 # Run with an agent?
@@ -166,18 +166,7 @@ def game_loop(agent=None):
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                     action = Action.RELEASE_R if event.key == pygame.K_RIGHT else Action.RELEASE_L
             if event.type == pygame.USEREVENT and agent:
-                if event.key == "ACTION":
-                    action = event.action
-                elif event.key == "REQUEST":
-                    if event.request == Requests.STATE:
-                        # print("STATE REQUESTED")
-                        ball_x, ball_y = ball.get_pos()
-                        goal_x, goal_y = goal.get_pos()
-                        agent.tell({"key": "STATE", "dx": ball_x-goal_x, "dy": ball_y-goal_y})
-                    elif event.request == Requests.REWARD:
-                        # print("REWARD REQUESTED")
-                        agent.tell({"key": "REWARD", "value": 0})
-
+                action = event.key
         
         # Convert key into action
         if action == Action.UP:
@@ -203,6 +192,16 @@ def game_loop(agent=None):
                 collisions = 0
         else:
             collisions = 0
+
+        # Updates the agents information
+        counter += 1
+        if agent and counter >= 10:
+            ball_x, ball_y = ball.get_pos()
+            goal_x, goal_y = goal.get_pos()
+            vel_x, vel_y = ball.get_vel()
+            agent.tell({"key":"BALL", "x":ball_x, "y":ball_y})
+            agent.tell({"key":"GOAL", "x":goal_x, "y":goal_y})
+            counter = 0
 
         pygame.display.update()
         clock.tick(60)
