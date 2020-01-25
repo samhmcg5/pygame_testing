@@ -18,16 +18,19 @@ screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 font = pygame.font.Font('freesansbold.ttf', 12)
 
+
 def kinematic(vel, acc):
     change = vel*delta_t + 0.5*acc*math.pow(delta_t, 2)
     vel += acc*delta_t
     return change, vel
+
 
 def showText(x, y, text):
     text = font.render(text, True, white)
     text_rect = text.get_rect()
     text_rect.center = (x, y)
     gameDisplay.blit(text, text_rect)
+
 
 class Goal():
     def __init__(self, x, y, rad, color):
@@ -43,7 +46,7 @@ class Goal():
     def reset(self):
         self.x = int(random() * width)
         self.y = int(random() * height)
-        self.rect.center = (self.x,self.y)
+        self.rect.center = (self.x, self.y)
 
     def collides(self, shape):
         if self.rect.colliderect(shape):
@@ -57,25 +60,27 @@ class Goal():
     def get_pos(self):
         return self.x, self.y
 
+
 class Ball():
     def __init__(self, x, y, rad, color):
-        self.x        = int(x)
-        self.y        = int(y)
-        self.rad      = rad
-        self.color    = color
+        self.x = int(x)
+        self.y = int(y)
+        self.rad = rad
+        self.color = color
         self.x_change = 0
         self.y_change = 0
-        self.x_vel    = 0
-        self.y_vel    = 0
-        self.x_acc    = 0
-        self.y_acc    = 200
-        self.x_dir    = 0
+        self.x_vel = 0
+        self.y_vel = 0
+        self.x_acc = 0
+        self.y_acc = 200
+        self.x_dir = 0
         self.rect = pygame.Rect(self.x, self.y, 2*self.rad, 2*self.rad)
 
     def draw(self):
         x = int(self.x)
         y = int(self.y)
-        self.rect = pygame.draw.circle(gameDisplay, self.color, (x, y), self.rad)
+        self.rect = pygame.draw.circle(
+            gameDisplay, self.color, (x, y), self.rad)
 
     def get_rect(self):
         return self.rect
@@ -93,12 +98,15 @@ class Ball():
         self.x_vel = -150
         self.x_dir = -1
         self.x_acc = 0
+
     def right(self):
         self.x_vel = 150
         self.x_dir = 1
         self.x_acc = 0
+
     def up(self):
         self.y_vel = -150
+
     def release_x(self, event):
         if (event == Action.RELEASE_L and self.x_dir < 0) or (event == Action.RELEASE_R and self.x_dir > 0):
             self.x_acc = 200
@@ -115,7 +123,7 @@ class Ball():
             self.x_dir = 0
         # boundaries
         if (self.x > width - self.size() and self.x_change > 0) or \
-            (self.x-self.size() < 0 and self.x_change < 0):
+                (self.x-self.size() < 0 and self.x_change < 0):
             self.x_change = 0
             self.x_vel = -0.5*self.x_vel
 
@@ -131,7 +139,7 @@ class Ball():
         # update position
         self.x += self.x_change
         self.y += self.y_change
-            
+
 
 #######################
 ###     GAME LOOP   ###
@@ -142,11 +150,13 @@ def game_loop(agent=None):
     running = True
     # logic states
     collisions = 0
-    current_collide = False
-    counter = 0
 
-    goal = Goal(0.5*width ,0.1*height, 50, red)
+    goal = Goal(0.5*width, 0.1*height, 50, red)
     ball = Ball(x, y, 20, white)
+
+    ball_x, ball_y = ball.get_pos()
+    goal_x, goal_y = goal.get_pos()
+    prev_delta = (ball_x-goal_x, ball_y-goal_y)
 
     while running:
         action = 0
@@ -173,12 +183,33 @@ def game_loop(agent=None):
                         # print("STATE REQUESTED")
                         ball_x, ball_y = ball.get_pos()
                         goal_x, goal_y = goal.get_pos()
-                        agent.tell({"key": "STATE", "dx": ball_x-goal_x, "dy": ball_y-goal_y})
+                        vel_x, vel_y = ball.get_vel()
+                        vx = 0 if vel_x >= 0 else 1
+                        vy = 0 if vel_y >= 0 else 1
+                        agent.tell({"key": "STATE", "dx": ball_x -
+                                    goal_x, "dy": ball_y-goal_y,
+                                    "vel_x": vx, "vel_y": vy})
+                        prev_delta = (ball_x-goal_x, ball_y-goal_y)
                     elif event.request == Requests.REWARD:
                         # print("REWARD REQUESTED")
-                        agent.tell({"key": "REWARD", "value": 0})
+                        ball_x, ball_y = ball.get_pos()
+                        goal_x, goal_y = goal.get_pos()
+                        current_delta = (ball_x-goal_x, ball_y-goal_y)
+                        ### TODO FIX ###
+                        reward = 0
+                        if collisions > 0:
+                            reward = COLLIDE_REWARD
+                        else:
+                            dist_now = math.sqrt(
+                                math.pow(current_delta[0], 2) + math.pow(current_delta[1], 2))
+                            dist_then = math.sqrt(
+                                math.pow(prev_delta[0], 2) + math.pow(prev_delta[1], 2))
+                            reward = dist_then - dist_now
 
-        
+                        ### FIX ###
+                        agent.tell({"key": "REWARD", "value": reward,
+                                    "dx": ball_x-goal_x, "dy": ball_y-goal_y})
+
         # Convert key into action
         if action == Action.UP:
             ball.up()
@@ -207,6 +238,7 @@ def game_loop(agent=None):
         pygame.display.update()
         clock.tick(60)
 
+
 # RUN
 if __name__ == '__main__':
     if run_agent:
@@ -216,6 +248,6 @@ if __name__ == '__main__':
         a.stop()
     else:
         game_loop()
-    
+
     pygame.quit()
     quit()
